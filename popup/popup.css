@@ -1,0 +1,18 @@
+body {
+    width: 400px; /* Adjust width as needed */
+    padding: 10px;
+}
+
+input[type="text"], input[type="number"] {
+    width: calc(100% - 120px);
+    margin-bottom: 10px;
+}
+
+button {
+    margin-top: 5px;
+    display: block;
+}
+
+ul {
+    margin-top: 20px;
+}

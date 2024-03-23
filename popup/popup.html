@@ -1,21 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>ChromeAli Control</title>
+    <title>ChromeAli Extension</title>
     <style>
         body {
-            width: 200px;
-            padding: 10px;
+            width: 400px;
+            padding: 20px;
         }
-        button {
-            width: 100%;
-            margin-bottom: 10px;
+        ul {
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
-    <h1>ChromeAli</h1>
-    <script type="module" src="popup.js"></script>
+    <div>
+        Ticket Number: <input type="text" id="ticketNumber"><br>
+        Ticket Type: <input type="text" id="ticketType"><br>
+        <button id="addTicketButton">Add Ticket</button>
+    </div>
+    <div>
+        <button id="toggleProcessingButton">Start Processing</button>
+        <button id="recalculateButton">Recalculate Times</button>
+    </div>
+    <div>
+        Period (min): <input type="number" id="fixedPeriod"><br>
+        Random Min (min): <input type="number" id="randomMin"><br>
+        Random Max (min): <input type="number" id="randomMax"><br>
+    </div>
+    <ul id="ticketList">
+        <!-- Tickets will be dynamically added here -->
+    </ul>
+
+    <script src="popup.js"></script>
 </body>
 </html>
