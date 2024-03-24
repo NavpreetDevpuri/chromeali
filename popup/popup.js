@@ -1,3 +1,4 @@
+let popupBackgroundPort = null;
 document.addEventListener('DOMContentLoaded', async () => {
   await loadInitialUIState();
   document.getElementById('addInputsDataButton').addEventListener('click', async () => await addInputsData());
@@ -6,6 +7,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('fixedPeriod').addEventListener('change', async () => await updateSetting('fixedPeriod'));
   document.getElementById('randomMin').addEventListener('change', async () => await updateSetting('randomMin'));
   document.getElementById('randomMax').addEventListener('change', async () => await updateSetting('randomMax'));
+
+  const port = chrome.runtime.connect({name: "popupBackgroundCommunication"});
+  popupBackgroundPort = port;
+  port.onMessage.addListener(msg => handlePopupMessage(msg));
+  // Listen for popup window unload event
+  window.addEventListener('unload', () => {
+    // Disconnect the port when the popup is closed
+    port.disconnect();
+    popupBackgroundPort = null;
+});
 
 });
 
@@ -24,25 +35,25 @@ async function sendMessageToContentScript(tabId, message) {
 }
 
 async function recalculateTimes() {
-  await sendMessage('background:recalculateTimes');
+  popupBackgroundPort.postMessage({ action: 'background:recalculateTimes' });
   await updateInputsDataList();
 }
 
 async function addInputsData() {
   const inputsData = await getInputsDataFromActiveTab();
   if (inputsData.inputFieldsData?.length) {
-    await sendMessage('background:addInputsData', inputsData);
+    popupBackgroundPort.postMessage({ action: 'background:addInputsData', data: { inputsData } });
   }
   await updateInputsDataList();
 }
 
 async function toggleProcessing() {
-  await sendMessage('background:toggleProcessing');
+  popupBackgroundPort.postMessage({ action: 'background:toggleProcessing' });
 }
 
 async function updateSetting(settingName) {
   const value = document.getElementById(settingName).value;
-  await sendMessage('background:updateSetting', { settingName, value });
+  popupBackgroundPort.postMessage({ action: 'background:updateSetting', data: { settingName, value } });
 }
 
 function formatInputsData(inputsData) {
@@ -96,18 +107,6 @@ async function updateToggleProcessingButton() {
 }
 
 
-async function sendMessage(action, data = {}) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action, ...data }, function (response) {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(response);
-      }
-    });
-  });
-}
-
 async function handlePopupMessage(message) {
   switch (message.action) {
     case 'popup:updateInputsDataList':
@@ -118,11 +117,3 @@ async function handlePopupMessage(message) {
       break;
   }
 }
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  handlePopupMessage(message, sendResponse).then(result => {
-    sendResponse({ data: result });
-  }).catch(error => {
-    sendResponse({ error: error.message });
-  });
-  return true; // Explicitly keep the message channel open
-});

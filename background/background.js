@@ -9,10 +9,24 @@ chrome.runtime.onInstalled.addListener(async () => {
   // await switchToTabByUrl('https://www.example.com/');
 });
 
+let popupBackgroundPort = null;
+chrome.runtime.onConnect.addListener(port => {
+  console.assert(port.name == "popupBackgroundCommunication");
+  port.onMessage.addListener(msg => handleBackgroundMessage(msg));
+  popupBackgroundPort = port;
+
+  // Listen for disconnect event on the port
+  port.onDisconnect.addListener(() => {
+      console.log("Popup has disconnected.");
+      // Perform any additional cleanup here
+      popupBackgroundPort = null;
+  });
+});
+
 async function handleBackgroundMessage(message) {
   switch (message.action) {
     case 'background:addInputsData':
-      await addInputsData(message);
+      await addInputsData(message.data);
       break;
     case 'background:toggleProcessing':
       await toggleProcessing();
@@ -20,21 +34,12 @@ async function handleBackgroundMessage(message) {
       await recalculateTimes();
       break;
     case 'background:updateSetting':
-      await updateSetting(message.settingName, message.value);
+      await updateSetting(message.data.settingName, message.data.value);
       break;
   }
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  handleBackgroundMessage(message, sendResponse).then(result => {
-    sendResponse({ data: result });
-  }).catch(error => {
-    sendResponse({ error: error.message });
-  });
-  return true; // Explicitly keep the message channel open
-});
-
-async function addInputsData(inputsData) {
+async function addInputsData({ inputsData }) {
   const { inputsDataList, settings } = await chrome.storage.local.get([
     'inputsDataList',
     'settings',
@@ -52,6 +57,7 @@ async function addInputsData(inputsData) {
     status: 'pending',
   };
   await chrome.storage.local.set({ inputsDataList: [...inputsDataList, newInputsData] });
+  postMessageToPopupBackgroundPort({ action: 'popup:updateInputsDataList' });
 }
 
 async function toggleProcessing() {
@@ -61,7 +67,7 @@ async function toggleProcessing() {
   if (newProcessingState) {
     processInputsDatas();
   }
-  await sendMessage('popup:updateToggleProcessingButton');
+  postMessageToPopupBackgroundPort({ action: 'popup:updateToggleProcessingButton' });
 }
 
 async function recalculateTimes() {
@@ -76,6 +82,7 @@ async function recalculateTimes() {
     InputsData.executionTime = executionTime;
   });
   await chrome.storage.local.set({ inputsDataList });
+  postMessageToPopupBackgroundPort({ action: 'popup:updateInputsDataList' });
 }
 
 async function processInputsData(inputsData) {
@@ -126,12 +133,18 @@ async function processInputsDatas() {
       await processInputsData(inputsData);
       inputsData.status = 'processed';
       await chrome.storage.local.set({ inputsDataList });
-      await sendMessage('popup:updateInputsDataList');
+      postMessageToPopupBackgroundPort({ action: 'popup:updateInputsDataList' });
       if (!(await chrome.storage.local.get(['isProcessing'])).isProcessing)
         break; // Stop processing if toggled off
     }
   }
   await toggleProcessing();
+}
+
+function postMessageToPopupBackgroundPort(message) {
+  if (popupBackgroundPort) {
+    popupBackgroundPort.postMessage(message);
+  }
 }
 
 function calculateExecutionTimeDelta(settings) {
@@ -153,18 +166,6 @@ function sleepTill(executionTime) {
   return delay > 0
     ? new Promise((resolve) => setTimeout(resolve, delay))
     : Promise.resolve();
-}
-
-async function sendMessage(action, data = {}) {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action, ...data }, function (response) {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(response);
-      }
-    });
-  });
 }
 
 async function switchToTabByUrl(url) {
