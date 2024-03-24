@@ -44,31 +44,30 @@ async function updateSetting(settingName) {
   await sendMessage('background:updateSetting', { settingName, value });
 }
 
-async function loadInitialUIState() {
-  try {
-    const formData = await getFormDataFromActiveTab();
-    const formattedData = formData?.map(input => {
-      return `name: ${input.name}\n` +
-              `id: ${input.id}\n` +
-              `value: ${input.value}\n`;
-    }).join("\n");
+function formatInputsData(inputsData) {
+  const formattedInputsData = inputsData?.map(input => {
+    return `${input.name ? `name: ${input.name}\n` : ''}` +
+      `${input.id ? `id: ${input.id}\n` : ''}` +
+      `value: ${input.value}\n`;
+  }).join("\n");
+  return formattedInputsData;
+}
 
-    document.getElementById("formData").innerText = formattedData;
-  } catch (error) {
-    console.error('Error fetching input values:', error);
-  }
+async function loadInitialUIState() {
   const { settings, isProcessing } = await chrome.storage.local.get(['isProcessing', 'settings']);
   document.getElementById('toggleProcessingButton').textContent = isProcessing ? 'Stop Processing' : 'Start Processing';
   document.getElementById('fixedPeriod').value = settings.fixedPeriod;
   document.getElementById('randomMin').value = settings.randomMin;
   document.getElementById('randomMax').value = settings.randomMax;
+  const inputsData = await getInputsDataFromActiveTab();
+  document.getElementById("inputsData").innerText = formatInputsData(inputsData);
   await updateFormDataList();
 }
 
-async function getFormDataFromActiveTab() {
+async function getInputsDataFromActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const { formData } = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getFormData" }) || { formData: [] };
-  return formData;
+  const { inputsData } = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getInputsData" }) || { inputsData: [] };
+  return inputsData;
 }
 
 async function updateFormDataList() {
@@ -76,12 +75,12 @@ async function updateFormDataList() {
   const formDataListElement = document.getElementById('formDataList');
   formDataListElement.innerHTML = '';
 
-  // formDataList.forEach(ticket => {
-  //     const ticketElement = document.createElement('li');
-  //     const executionTime = new Date(ticket.executionTime).toLocaleTimeString();    
-  //     ticketElement.textContent = `FormData: ${ticket.ticketNumber}, Type: ${ticket.ticketType}, Status: ${ticket.status}, Execution Time: ${executionTime}`;
-  //     formDataListElement.appendChild(ticketElement);
-  // });
+  formDataList.forEach(formData => {
+    const ticketElement = document.createElement('li');
+    const executionTime = new Date(ticket.executionTime).toLocaleTimeString();
+    ticketElement.textContent = `FormData: ${formData.name}, Type: ${formData.id}, Status: ${formData.status}, Execution Time: ${executionTime}`;
+    formDataListElement.appendChild(ticketElement);
+  });
 }
 
 async function updateToggleProcessingButton() {
