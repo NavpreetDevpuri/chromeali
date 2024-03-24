@@ -16,7 +16,8 @@
         "alarms",
         "storage",
         "notifications",
-        "tabs"
+        "tabs",
+        "scripting"
     ],
     "action": {
         "default_popup": "popup/popup.html",
@@ -32,8 +33,11 @@
                 "<all_urls>"
             ],
             "js": [
-                "content_scripts/content_script.js"
+                "content_scripts/contentScript.js"
             ]
         }
-    ]
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    }
 }

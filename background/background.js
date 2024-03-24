@@ -1,6 +1,6 @@
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.storage.local.set({
-    tickets: [],
+    FormDataList: [],
     settings: { fixedPeriod: 1, randomMin: 0, randomMax: 0 },
     isProcessing: false,
   });
@@ -12,16 +12,16 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   try {
     switch (message.action) {
-      case 'background:addTicket':
-        await addTicket(message);
-        await sendMessage('popup:updateTicketList');
+      case 'background:addFormData':
+        await addFormData(message);
+        await sendMessage('popup:updateFormDataList');
         break;
       case 'background:toggleProcessing':
         await toggleProcessing();
         await sendMessage('popup:updateToggleProcessingButton');
       case 'background:recalculateTimes':
         await recalculateTimes();
-        await sendMessage('popup:updateTicketList');
+        await sendMessage('popup:updateFormDataList');
         break;
       case 'background:updateSetting':
         await updateSetting(message.settingName, message.value);
@@ -35,25 +35,24 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   return false;
 });
 
-async function addTicket({ ticketNumber, ticketType }) {
-  const { tickets, settings } = await chrome.storage.local.get([
-    'tickets',
+async function addFormData(formData) {
+  const { formDataList, settings } = await chrome.storage.local.get([
+    'FormDataList',
     'settings',
   ]);
   let executionTime =
     new Date().getTime() + calculateExecutionTimeDelta(settings);
-  if (tickets.length) {
+  if (formDataList.length) {
     executionTime =
-      Math.max(...tickets.map((t) => t.executionTime)) +
+      Math.max(...formDataList.map((t) => t.executionTime)) +
       calculateExecutionTimeDelta(settings);
   }
-  const newTicket = {
-    ticketNumber,
-    ticketType,
+  const newFormData = {
+    formData,
     executionTime,
     status: 'pending',
   };
-  await chrome.storage.local.set({ tickets: [...tickets, newTicket] });
+  await chrome.storage.local.set({ formDataList: [...formDataList, newFormData] });
 }
 
 async function toggleProcessing() {
@@ -61,46 +60,42 @@ async function toggleProcessing() {
   const newProcessingState = !isProcessing;
   await chrome.storage.local.set({ isProcessing: newProcessingState });
   if (newProcessingState) {
-    processTickets(); // Note: This starts processing tickets but doesn't await it to allow the service worker to sleep.
+    processFormDatas();
   }
 }
 
 async function recalculateTimes() {
-  const { tickets, settings } = await chrome.storage.local.get([
-    'tickets',
+  const { formDataList, settings } = await chrome.storage.local.get([
+    'FormDataList',
     'settings',
   ]);
   let preTime = new Date().getTime();
-  const updatedTickets = tickets.map((ticket) => {
+  formDataList.forEach((FormData) => {
     const executionTime = preTime + calculateExecutionTimeDelta(settings);
     preTime = executionTime;
-    return {
-      ...ticket,
-      executionTime,
-    };
+    FormData.executionTime = executionTime;
   });
-  await chrome.storage.local.set({ tickets: updatedTickets });
+  await chrome.storage.local.set({ formDataList });
 }
 
-async function processTickets() {
-  const { tickets, isProcessing } = await chrome.storage.local.get([
-    'tickets',
+async function processFormDatas() {
+  const { formDataList, isProcessing } = await chrome.storage.local.get([
+    'FormDataList',
     'isProcessing',
   ]);
   if (!isProcessing) return;
 
-  for (let ticket of tickets) {
-    if (ticket.status === 'pending') {
-      await sleepTill(ticket.executionTime);
-      console.log(`Processing ticket: ${ticket.ticketNumber}`);
-      ticket.status = 'processed';
-      await chrome.storage.local.set({ tickets });
-      await sendMessage('popup:updateTicketList');
+  for (let formData of formDataList) {
+    if (formData.status === 'pending') {
+      await sleepTill(formData.executionTime);
+      console.log(`Processing formData: ${JSON.stringify(formData)}`);
+      formData.status = 'processed';
+      await chrome.storage.local.set({ formDataList });
+      await sendMessage('popup:updateFormDataList');
       if (!(await chrome.storage.local.get(['isProcessing'])).isProcessing)
         break; // Stop processing if toggled off
     }
   }
-  await chrome.storage.local.set({ tickets });
 }
 
 function calculateExecutionTimeDelta(settings) {

@@ -1,5 +1,5 @@
 body {
-    width: 400px; /* Adjust width as needed */
+    width: 720px; /* Adjust width as needed */
     padding: 10px;
 }
 
@@ -14,5 +14,9 @@ button {
 }
 
 ul {
-    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+pre {
+    font-family: monospace;
 }

@@ -2,22 +2,12 @@
 <html>
 <head>
     <title>ChromeAli Extension</title>
-    <style>
-        body {
-            width: 400px;
-            padding: 20px;
-        }
-        ul {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-    </style>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div>
-        Ticket Number: <input type="text" id="ticketNumber"><br>
-        Ticket Type: <input type="text" id="ticketType"><br>
-        <button id="addTicketButton">Add Ticket</button>
+        <pre id="formData"></pre>
+        <button id="addFormDataButton">Add Form Data</button>
     </div>
     <div>
         <button id="toggleProcessingButton">Start Processing</button>
@@ -28,7 +18,7 @@
         Random Min (min): <input type="number" id="randomMin"><br>
         Random Max (min): <input type="number" id="randomMax"><br>
     </div>
-    <ul id="ticketList">
+    <ul id="formDataList">
         <!-- Tickets will be dynamically added here -->
     </ul>
 
