@@ -15,7 +15,8 @@
         "activeTab",
         "alarms",
         "storage",
-        "notifications"
+        "notifications",
+        "tabs"
     ],
     "action": {
         "default_popup": "popup/popup.html",
