@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   await loadInitialUIState();
-  document.getElementById('addFormDataButton').addEventListener('click', async () => await addFormData());
+  document.getElementById('addInputsDataButton').addEventListener('click', async () => await addInputsData());
   document.getElementById('toggleProcessingButton').addEventListener('click', async () => await toggleProcessing());
   document.getElementById('recalculateButton').addEventListener('click', async () => await sendMessage('background:recalculateTimes'));
   document.getElementById('fixedPeriod').addEventListener('change', async () => await updateSetting('fixedPeriod'));
@@ -25,14 +25,9 @@ async function sendMessageToContentScript(tabId, message) {
 
 
 
-async function addFormData() {
-  // const ticketNumber = document.getElementById('ticketNumber').value;
-  // const ticketType = document.getElementById('ticketType').value;
-  // if (ticketNumber && ticketType) {
-  //     await sendMessage('background:addFormData', { ticketNumber, ticketType });
-  //     document.getElementById('ticketNumber').value = '';
-  //     document.getElementById('ticketType').value = '';
-  // }
+async function addInputsData() {
+  const inputsData = await getInputsDataFromActiveTab();
+  await sendMessage('background:addInputsData', inputsData);
 }
 
 async function toggleProcessing() {
@@ -45,12 +40,16 @@ async function updateSetting(settingName) {
 }
 
 function formatInputsData(inputsData) {
-  const formattedInputsData = inputsData?.map(input => {
+  const formattedInputFieldsData = inputsData?.inputFieldsData?.map(input => {
     return `${input.name ? `name: ${input.name}\n` : ''}` +
       `${input.id ? `id: ${input.id}\n` : ''}` +
       `value: ${input.value}\n`;
   }).join("\n");
-  return formattedInputsData;
+  return `${inputsData.url ? `URL: ${inputsData.url}\n` : ''}` +
+    `${inputsData.executionTime ? `Execution time: ${new Date(inputsData.executionTime).toLocaleTimeString()}\n` : ''}` +
+    `${inputsData.status ? `Status: ${inputsData.status}\n` : ''}` +
+    `\n` + 
+    `${formattedInputFieldsData ? `${formattedInputFieldsData}` : ''}`;
 }
 
 async function loadInitialUIState() {
@@ -61,25 +60,26 @@ async function loadInitialUIState() {
   document.getElementById('randomMax').value = settings.randomMax;
   const inputsData = await getInputsDataFromActiveTab();
   document.getElementById("inputsData").innerText = formatInputsData(inputsData);
-  await updateFormDataList();
+  await updateInputsDataList();
 }
 
 async function getInputsDataFromActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const { inputsData } = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getInputsData" }) || { inputsData: [] };
+  const inputsData = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getInputsData" }) || {};
   return inputsData;
 }
 
-async function updateFormDataList() {
-  const { formDataList } = await chrome.storage.local.get(['formDataList']);
-  const formDataListElement = document.getElementById('formDataList');
-  formDataListElement.innerHTML = '';
+async function updateInputsDataList() {
+  const { inputsDataList } = await chrome.storage.local.get(['inputsDataList']);
+  const inputsDataListElement = document.getElementById('inputsDataList');
+  inputsDataListElement.innerHTML = '';
 
-  formDataList.forEach(formData => {
-    const ticketElement = document.createElement('li');
-    const executionTime = new Date(ticket.executionTime).toLocaleTimeString();
-    ticketElement.textContent = `FormData: ${formData.name}, Type: ${formData.id}, Status: ${formData.status}, Execution Time: ${executionTime}`;
-    formDataListElement.appendChild(ticketElement);
+  inputsDataList.forEach(inputsData => {
+    const liElement = document.createElement('li');
+    const preElement = document.createElement('pre');
+    liElement.appendChild(preElement);
+    preElement.innerText = formatInputsData(inputsData);
+    inputsDataListElement.appendChild(liElement);
   });
 }
 
@@ -96,8 +96,8 @@ async function sendMessage(action, data = {}) {
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   try {
     switch (message.action) {
-      case 'popup:updateFormDataList':
-        await updateFormDataList();
+      case 'popup:updateInputsDataList':
+        await updateInputsDataList();
         break;
       case 'popup:updateToggleProcessingButton':
         await updateToggleProcessingButton();

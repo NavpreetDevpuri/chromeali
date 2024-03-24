@@ -5,17 +5,19 @@ console.log('ChromeAli content script loaded');
 // contentScript.js
 function getInputsData() {
   const inputs = document.querySelectorAll('input');
-  return Array.from(inputs).map(input => ({
+  inputFieldsData = Array.from(inputs).map(input => ({
     name: input.name,
     id: input.id,
     value: input.value
   }));
+  url = document.URL;
+  return { inputFieldsData, url }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "contentScript:getInputsData") {
     const inputsData = getInputsData();
-    sendResponse({ inputsData });
+    sendResponse(inputsData);
     return true; // Indicates you wish to send a response asynchronously (this is crucial)
   }
 });

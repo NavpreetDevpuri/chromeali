@@ -1,6 +1,6 @@
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.storage.local.set({
-    FormDataList: [],
+    inputsDataList: [],
     settings: { fixedPeriod: 1, randomMin: 0, randomMax: 0 },
     isProcessing: false,
   });
@@ -12,16 +12,16 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   try {
     switch (message.action) {
-      case 'background:addFormData':
-        await addFormData(message);
-        await sendMessage('popup:updateFormDataList');
+      case 'background:addInputsData':
+        await addInputsData(message);
+        await sendMessage('popup:updateInputsDataList');
         break;
       case 'background:toggleProcessing':
         await toggleProcessing();
         await sendMessage('popup:updateToggleProcessingButton');
       case 'background:recalculateTimes':
         await recalculateTimes();
-        await sendMessage('popup:updateFormDataList');
+        await sendMessage('popup:updateInputsDataList');
         break;
       case 'background:updateSetting':
         await updateSetting(message.settingName, message.value);
@@ -35,24 +35,24 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   return false;
 });
 
-async function addFormData(formData) {
-  const { formDataList, settings } = await chrome.storage.local.get([
-    'FormDataList',
+async function addInputsData(inputsData) {
+  const { inputsDataList, settings } = await chrome.storage.local.get([
+    'inputsDataList',
     'settings',
   ]);
   let executionTime =
     new Date().getTime() + calculateExecutionTimeDelta(settings);
-  if (formDataList.length) {
+  if (inputsDataList.length) {
     executionTime =
-      Math.max(...formDataList.map((t) => t.executionTime)) +
+      Math.max(...inputsDataList.map((t) => t.executionTime)) +
       calculateExecutionTimeDelta(settings);
   }
-  const newFormData = {
-    formData,
+  const newInputsData = {
+    ...inputsData,
     executionTime,
     status: 'pending',
   };
-  await chrome.storage.local.set({ formDataList: [...formDataList, newFormData] });
+  await chrome.storage.local.set({ inputsDataList: [...inputsDataList, newInputsData] });
 }
 
 async function toggleProcessing() {
@@ -60,38 +60,42 @@ async function toggleProcessing() {
   const newProcessingState = !isProcessing;
   await chrome.storage.local.set({ isProcessing: newProcessingState });
   if (newProcessingState) {
-    processFormDatas();
+    processInputsDatas();
   }
 }
 
 async function recalculateTimes() {
-  const { formDataList, settings } = await chrome.storage.local.get([
-    'FormDataList',
+  const { inputsDataList, settings } = await chrome.storage.local.get([
+    'inputsDataList',
     'settings',
   ]);
   let preTime = new Date().getTime();
-  formDataList.forEach((FormData) => {
+  inputsDataList.filter((d) => d.status == "pending").forEach((InputsData) => {
     const executionTime = preTime + calculateExecutionTimeDelta(settings);
     preTime = executionTime;
-    FormData.executionTime = executionTime;
+    InputsData.executionTime = executionTime;
   });
-  await chrome.storage.local.set({ formDataList });
+  await chrome.storage.local.set({ inputsDataList });
 }
 
-async function processFormDatas() {
-  const { formDataList, isProcessing } = await chrome.storage.local.get([
-    'FormDataList',
+async function processInputsData(inputsData) {
+  console.log(`Processing inputsData: ${JSON.stringify(inputsData)}`);
+}
+
+async function processInputsDatas() {
+  const { inputsDataList, isProcessing } = await chrome.storage.local.get([
+    'inputsDataList',
     'isProcessing',
   ]);
   if (!isProcessing) return;
 
-  for (let formData of formDataList) {
-    if (formData.status === 'pending') {
-      await sleepTill(formData.executionTime);
-      console.log(`Processing formData: ${JSON.stringify(formData)}`);
-      formData.status = 'processed';
-      await chrome.storage.local.set({ formDataList });
-      await sendMessage('popup:updateFormDataList');
+  for (let inputsData of inputsDataList) {
+    if (inputsData.status === 'pending') {
+      await sleepTill(inputsData.executionTime);
+      await processInputsData(inputsData);
+      inputsData.status = 'processed';
+      await chrome.storage.local.set({ inputsDataList });
+      await sendMessage('popup:updateInputsDataList');
       if (!(await chrome.storage.local.get(['isProcessing'])).isProcessing)
         break; // Stop processing if toggled off
     }
