@@ -67,7 +67,7 @@ async function loadInitialUIState() {
 
 async function getFormDataFromActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const { formData } = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getFormData" });
+  const { formData } = await sendMessageToContentScript(tabs[0].id, { action: "contentScript:getFormData" }) || { formData: [] };
   return formData;
 }
 
