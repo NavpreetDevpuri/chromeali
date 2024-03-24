@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadInitialUIState();
   document.getElementById('addInputsDataButton').addEventListener('click', async () => await addInputsData());
   document.getElementById('toggleProcessingButton').addEventListener('click', async () => await toggleProcessing());
-  document.getElementById('recalculateButton').addEventListener('click', async () => await sendMessage('background:recalculateTimes'));
+  document.getElementById('recalculateButton').addEventListener('click', async () => await recalculateTimes());
   document.getElementById('fixedPeriod').addEventListener('change', async () => await updateSetting('fixedPeriod'));
   document.getElementById('randomMin').addEventListener('change', async () => await updateSetting('randomMin'));
   document.getElementById('randomMax').addEventListener('change', async () => await updateSetting('randomMax'));
@@ -23,13 +23,17 @@ async function sendMessageToContentScript(tabId, message) {
   });
 }
 
-
+async function recalculateTimes() {
+  await sendMessage('background:recalculateTimes');
+  await updateInputsDataList();
+}
 
 async function addInputsData() {
   const inputsData = await getInputsDataFromActiveTab();
   if (inputsData.inputFieldsData?.length) {
     await sendMessage('background:addInputsData', inputsData);
   }
+  await updateInputsDataList();
 }
 
 async function toggleProcessing() {
@@ -50,7 +54,7 @@ function formatInputsData(inputsData) {
   return `${inputsData.url ? `URL: ${inputsData.url}\n` : ''}` +
     `${inputsData.executionTime ? `Execution time: ${new Date(inputsData.executionTime).toLocaleTimeString()}\n` : ''}` +
     `${inputsData.status ? `Status: ${inputsData.status}\n` : ''}` +
-    `\n` + 
+    `\n` +
     `${formattedInputFieldsData ? `${formattedInputFieldsData}` : ''}`;
 }
 
@@ -91,25 +95,34 @@ async function updateToggleProcessingButton() {
   document.getElementById('toggleProcessingButton').textContent = isProcessing ? 'Stop Processing' : 'Start Processing';
 }
 
+
 async function sendMessage(action, data = {}) {
-  return await chrome.runtime.sendMessage({ action, ...data });
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action, ...data }, function (response) {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
-
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  try {
-    switch (message.action) {
-      case 'popup:updateInputsDataList':
-        await updateInputsDataList();
-        break;
-      case 'popup:updateToggleProcessingButton':
-        await updateToggleProcessingButton();
-        break;
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    sendResponse({ error: error.message });
+async function handlePopupMessage(message) {
+  switch (message.action) {
+    case 'popup:updateInputsDataList':
+      await updateInputsDataList();
+      break;
+    case 'popup:updateToggleProcessingButton':
+      await updateToggleProcessingButton();
+      break;
   }
-  // For synchronous responses or if no response needed, return false.
-  return false;
+}
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  handlePopupMessage(message, sendResponse).then(result => {
+    sendResponse({ data: result });
+  }).catch(error => {
+    sendResponse({ error: error.message });
+  });
+  return true; // Explicitly keep the message channel open
 });

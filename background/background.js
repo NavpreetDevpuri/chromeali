@@ -6,33 +6,32 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 
   // Example usage
-  await switchToTabByUrl('https://www.example.com/');
+  // await switchToTabByUrl('https://www.example.com/');
 });
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  try {
-    switch (message.action) {
-      case 'background:addInputsData':
-        await addInputsData(message);
-        await sendMessage('popup:updateInputsDataList');
-        break;
-      case 'background:toggleProcessing':
-        await toggleProcessing();
-        await sendMessage('popup:updateToggleProcessingButton');
-      case 'background:recalculateTimes':
-        await recalculateTimes();
-        await sendMessage('popup:updateInputsDataList');
-        break;
-      case 'background:updateSetting':
-        await updateSetting(message.settingName, message.value);
-        break;
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-    sendResponse({ error: error.message });
+async function handleBackgroundMessage(message) {
+  switch (message.action) {
+    case 'background:addInputsData':
+      await addInputsData(message);
+      break;
+    case 'background:toggleProcessing':
+      await toggleProcessing();
+    case 'background:recalculateTimes':
+      await recalculateTimes();
+      break;
+    case 'background:updateSetting':
+      await updateSetting(message.settingName, message.value);
+      break;
   }
-  // For synchronous responses or if no response needed, return false.
-  return false;
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  handleBackgroundMessage(message, sendResponse).then(result => {
+    sendResponse({ data: result });
+  }).catch(error => {
+    sendResponse({ error: error.message });
+  });
+  return true; // Explicitly keep the message channel open
 });
 
 async function addInputsData(inputsData) {
@@ -62,6 +61,7 @@ async function toggleProcessing() {
   if (newProcessingState) {
     processInputsDatas();
   }
+  await sendMessage('popup:updateToggleProcessingButton');
 }
 
 async function recalculateTimes() {
@@ -80,6 +80,37 @@ async function recalculateTimes() {
 
 async function processInputsData(inputsData) {
   console.log(`Processing inputsData: ${JSON.stringify(inputsData)}`);
+
+  const tab = await chrome.tabs.create({ url: inputsData.url, active: true });
+
+  // TODO: Find better to wait, like wait for some perticular element to appear
+  await new Promise(resolve => setTimeout(resolve, 10000));
+
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: fillForm,
+    args: [inputsData.inputFieldsData],
+  });
+
+  // TODO: Find better to wait, like wait for network calls to finish
+  await new Promise(resolve => setTimeout(resolve, 10000));
+  chrome.tabs.remove(tab.id);
+}
+
+function fillForm(inputFieldsData) {
+  inputFieldsData.forEach(field => {
+    const selector = field.id ? `#${field.id}` : `input[name='${field.name}']`;
+    const inputElement = document.querySelector(selector);
+    if (inputElement) {
+      inputElement.value = field.value;
+    }
+  });
+
+  // TODO: Find better to submit, avoid hard coded selector
+  const submitButton = document.querySelector("body > xoc-root > xoc-global-main > div > div.body-wrapper.ng-tns-c499-0.ng-trigger.ng-trigger-routeAnimations > xoc-profile > div > div > xoc-profile-questions > form > xoc-submit-questions > div > button.\\!tw-text-sm.k-button.k-button-md.k-rounded-sm.k-button-solid-primary.k-button-solid");
+  if (submitButton) {
+    submitButton.click();
+  }
 }
 
 async function processInputsDatas() {
@@ -100,6 +131,7 @@ async function processInputsDatas() {
         break; // Stop processing if toggled off
     }
   }
+  await toggleProcessing();
 }
 
 function calculateExecutionTimeDelta(settings) {
@@ -124,7 +156,15 @@ function sleepTill(executionTime) {
 }
 
 async function sendMessage(action, data = {}) {
-  return await chrome.runtime.sendMessage({ action, ...data });
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action, ...data }, function (response) {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
 async function switchToTabByUrl(url) {

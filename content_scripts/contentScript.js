@@ -18,6 +18,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "contentScript:getInputsData") {
     const inputsData = getInputsData();
     sendResponse(inputsData);
-    return true; // Indicates you wish to send a response asynchronously (this is crucial)
   }
 });
