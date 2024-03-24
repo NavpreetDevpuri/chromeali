@@ -1,21 +1,104 @@
-body {
-    width: 720px; /* Adjust width as needed */
-    padding: 10px;
+* {
+  word-wrap: break-word; /* Allows long words to be able to break and wrap onto the next line */
+  white-space: normal; /* Ensures whitespace is handled normally, allowing wrapping */
 }
 
-input[type="text"], input[type="number"] {
-    width: calc(100% - 120px);
-    margin-bottom: 10px;
+body {
+  width: 720px; /* Adjust width as needed */
+  padding: 10px;
+}
+
+input[type='text'],
+input[type='number'] {
+  margin-bottom: 10px;
 }
 
 button {
-    margin-top: 5px;
-    display: block;
+  margin-top: 5px;
+  display: block;
 }
 
 ul {
-    overflow-y: auto;
+  list-style-type: none; /* This removes the bullet points */
+  padding: 0;
+}
+li {
+  border: 1rem black;
 }
 pre {
-    font-family: monospace;
+  font-family: monospace;
+}
+
+.card {
+  /* Basic visual appearance */
+  background-color: white; /* Card background color */
+  border: 1px solid #ccc; /* Card border */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Small shadow for depth */
+
+  /* Spacing */
+  padding: 20px; /* Space inside the card */
+  margin: 10px; /* Space outside the card */
+
+  /* Optional: Makes the card more card-like */
+  border-radius: 5px; /* Rounded corners */
+}
+
+.light-green {
+  background-color: #ddffcf; /* This is a light green color */
+}
+
+.friendly-button {
+  margin: 0.3rem;
+  /* Size and spacing */
+  padding: 8px 15px; /* Comfortable padding */
+  font-size: 14px; /* Clear, readable text size */
+
+  /* Color and style */
+  background-color: #f0f0f0; /* Very light gray for a soft look */
+  color: #333; /* Dark gray text for contrast and readability */
+  border: 2px solid #f0f0f0; /* Slightly pronounced border, same as background */
+  border-radius: 5px; /* Softly rounded corners for a gentle appearance */
+
+  /* Text styling */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Aesthetic and modern font */
+  text-align: center; /* Ensures text is centered */
+  text-decoration: none; /* Removes underline from links styled as buttons */
+  display: inline-block; /* Allows setting dimensions and alignment */
+  cursor: pointer; /* Changes cursor to pointer on hover for affordance */
+
+  /* Interactivity */
+  transition: background-color 0.3s, border-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.friendly-button:hover,
+.friendly-button:focus {
+  background-color: #e7e7e7; /* Slightly darker on hover/focus for feedback */
+  border-color: #ddd; /* Border transitions to match */
+}
+
+.friendly-input {
+  /* Size and spacing */
+  padding: 8px 10px; /* Comfortable padding for typing */
+  font-size: 14px; /* Clear, readable text size */
+
+  /* Color and style */
+  background-color: #f0f0f0; /* Very light gray, matching the button */
+  color: #333; /* Dark gray text for readability */
+  border: 2px solid #f0f0f0; /* Subtle border, blending with the background */
+  border-radius: 5px; /* Softly rounded corners */
+
+  /* Text styling */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Consistent with the button */
+  outline: none; /* Removes the default focus outline to customize below */
+
+  /* Box sizing */
+  box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+
+  /* Interactivity */
+  transition: background-color 0.3s, border-color 0.3s; /* Smooth transitions for interaction */
+}
+
+.friendly-input:focus {
+  background-color: #e7e7e7; /* Slightly darker to indicate focus, matching button hover state */
+  border-color: #ddd; /* Border color changes on focus to highlight the field */
 }

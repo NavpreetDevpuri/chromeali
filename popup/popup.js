@@ -27,7 +27,9 @@ async function sendMessageToContentScript(tabId, message) {
 
 async function addInputsData() {
   const inputsData = await getInputsDataFromActiveTab();
-  await sendMessage('background:addInputsData', inputsData);
+  if (inputsData.inputFieldsData?.length) {
+    await sendMessage('background:addInputsData', inputsData);
+  }
 }
 
 async function toggleProcessing() {
@@ -76,6 +78,7 @@ async function updateInputsDataList() {
 
   inputsDataList.forEach(inputsData => {
     const liElement = document.createElement('li');
+    liElement.className = `card ${inputsData.status == "processed" ? "light-green" : ""}`;
     const preElement = document.createElement('pre');
     liElement.appendChild(preElement);
     preElement.innerText = formatInputsData(inputsData);

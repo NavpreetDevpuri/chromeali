@@ -7,16 +7,15 @@
 <body>
     <div>
         <pre id="inputsData"></pre>
-        <button id="addInputsDataButton">Add Form Data</button>
+        <button id="addInputsDataButton" class="friendly-button">Add Form Data</button>
+        <button id="toggleProcessingButton" class="friendly-button">Start Processing</button>
+        <button id="recalculateButton" class="friendly-button">Recalculate Times</button>
     </div>
+    <br>
     <div>
-        <button id="toggleProcessingButton">Start Processing</button>
-        <button id="recalculateButton">Recalculate Times</button>
-    </div>
-    <div>
-        Period (min): <input type="number" id="fixedPeriod"><br>
-        Random Min (min): <input type="number" id="randomMin"><br>
-        Random Max (min): <input type="number" id="randomMax"><br>
+        Period (min): <input type="number" id="fixedPeriod" class="friendly-input"><br>
+        Random Min (min): <input type="number" id="randomMin" class="friendly-input"><br>
+        Random Max (min): <input type="number" id="randomMax" class="friendly-input"><br>
     </div>
     <ul id="inputsDataList">
         <!-- Tickets will be dynamically added here -->
