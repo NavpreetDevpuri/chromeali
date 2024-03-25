@@ -1,7 +1,7 @@
 chrome.runtime.onInstalled.addListener(async () => {
   await chrome.storage.local.set({
     inputsDataList: [],
-    settings: { fixedPeriod: 1, randomMin: 0, randomMax: 0 },
+    settings: { fixedPeriod: 5, randomMin: 1, randomMax: 5 },
     isProcessing: false,
   });
 

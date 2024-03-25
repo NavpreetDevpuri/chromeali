@@ -57,10 +57,10 @@ async function updateSetting(settingName) {
 }
 
 function formatInputsData(inputsData) {
-  const formattedInputFieldsData = inputsData?.inputFieldsData?.map(input => {
+  const formattedInputFieldsData = inputsData?.inputFieldsData?.filter(input => input.id || input.name  || input.value).map(input => {
     return `${input.name ? `name: ${input.name}\n` : ''}` +
       `${input.id ? `id: ${input.id}\n` : ''}` +
-      `value: ${input.value}\n`;
+      `${input.value ? `value: ${input.value}\n` : ''}`;
   }).join("\n");
   return `${inputsData.url ? `URL: ${inputsData.url}\n` : ''}` +
     `${inputsData.executionTime ? `Execution time: ${new Date(inputsData.executionTime).toLocaleTimeString()}\n` : ''}` +
