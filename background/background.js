@@ -17,9 +17,9 @@ chrome.runtime.onConnect.addListener(port => {
 
   // Listen for disconnect event on the port
   port.onDisconnect.addListener(() => {
-      console.log("Popup has disconnected.");
-      // Perform any additional cleanup here
-      popupBackgroundPort = null;
+    console.log("Popup has disconnected.");
+    // Perform any additional cleanup here
+    popupBackgroundPort = null;
   });
 });
 
@@ -176,4 +176,35 @@ async function switchToTabByUrl(url) {
   } else {
     console.log('No tab with the specified URL was found.');
   }
+}
+
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  // Check if the 'audible' property is part of the update
+  if ('audible' in changeInfo) {
+    console.log(`Tab ID ${tabId} audio status changed: `, changeInfo.audible);
+
+    // Activate the tab without focusing the window
+    chrome.tabs.update(tabId, {active: true}, function() {
+      console.log(`Tab ${tabId} activated.`);
+      runScriptInTab(tabId);
+    });
+
+    // Do not call chrome.windows.update here since you do not want to focus the window
+  }
+});
+
+function runScriptInTab(tabId) {
+  // Using chrome.scripting for Manifest V3
+  chrome.scripting.executeScript({
+    target: {tabId: tabId},
+    function: pageFunction
+  });
+}
+
+// This function will be executed in the context of the webpage
+function pageFunction() {
+  const unreadChatrooms = document.querySelectorAll(".p-channel_sidebar__channel--unread");
+  // Example function: Log a message to the webpage's console
+  console.log("This is running in the webpage context.");
 }
