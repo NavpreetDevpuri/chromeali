@@ -114,7 +114,7 @@ function fillForm(inputFieldsData) {
   });
 
   // TODO: Find better to submit, avoid hard coded selector
-  const submitButton = document.querySelector("body > xoc-root > xoc-global-main > div > div.body-wrapper.ng-tns-c499-0.ng-trigger.ng-trigger-routeAnimations > xoc-profile > div > div > xoc-profile-questions > form > xoc-submit-questions > div > button.\\!tw-text-sm.k-button.k-button-md.k-rounded-sm.k-button-solid-primary.k-button-solid");
+  const submitButton = document.querySelector('input[type="submit"]');
   if (submitButton) {
     submitButton.click();
   }
