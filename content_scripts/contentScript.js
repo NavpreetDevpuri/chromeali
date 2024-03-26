@@ -15,6 +15,7 @@ function getInputsData() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(request);
   if (request.action === "contentScript:getInputsData") {
     const inputsData = getInputsData();
     sendResponse(inputsData);

@@ -21,39 +21,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+function postMessageToPopupBackgroundPort(message) {
+  try {
+    if (popupBackgroundPort) {
+      popupBackgroundPort.postMessage(message);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 
 async function sendMessageToContentScript(tabId, message) {
   return new Promise((resolve, reject) => {
     chrome.tabs.sendMessage(tabId, message, function (response) {
-      // if (chrome.runtime.lastError) {
-      //   reject(new Error(chrome.runtime.lastError.message));
-      // } else {
-      resolve(response);
-      // }
+      if (chrome.runtime.lastError) {
+        // console.error(chrome.runtime.lastError);
+        // reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
     });
   });
 }
 
 async function recalculateTimes() {
-  popupBackgroundPort.postMessage({ action: 'background:recalculateTimes' });
+  postMessageToPopupBackgroundPort({ action: 'background:recalculateTimes' });
   await updateInputsDataList();
 }
 
 async function addInputsData() {
   const inputsData = await getInputsDataFromActiveTab();
   if (inputsData.inputFieldsData?.length) {
-    popupBackgroundPort.postMessage({ action: 'background:addInputsData', data: { inputsData } });
+    postMessageToPopupBackgroundPort({ action: 'background:addInputsData', data: { inputsData } });
   }
   await updateInputsDataList();
 }
 
 async function toggleProcessing() {
-  popupBackgroundPort.postMessage({ action: 'background:toggleProcessing' });
+  postMessageToPopupBackgroundPort({ action: 'background:toggleProcessing' });
 }
 
 async function updateSetting(settingName) {
   const value = document.getElementById(settingName).value;
-  popupBackgroundPort.postMessage({ action: 'background:updateSetting', data: { settingName, value } });
+  postMessageToPopupBackgroundPort({ action: 'background:updateSetting', data: { settingName, value } });
 }
 
 function formatInputsData(inputsData) {

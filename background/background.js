@@ -11,6 +11,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 let popupBackgroundPort = null;
 chrome.runtime.onConnect.addListener(port => {
+  console.log("Connecting popup...");
   console.assert(port.name == "popupBackgroundCommunication");
   port.onMessage.addListener(msg => handleBackgroundMessage(msg));
   popupBackgroundPort = port;
