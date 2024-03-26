@@ -179,20 +179,20 @@ async function switchToTabByUrl(url) {
 }
 
 
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  // Check if the 'audible' property is part of the update
-  if ('audible' in changeInfo) {
-    console.log(`Tab ID ${tabId} audio status changed: `, changeInfo.audible);
+// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+//   // Check if the 'audible' property is part of the update
+//   if ('audible' in changeInfo) {
+//     console.log(`Tab ID ${tabId} audio status changed: `, changeInfo.audible);
 
-    // Activate the tab without focusing the window
-    chrome.tabs.update(tabId, {active: true}, function() {
-      console.log(`Tab ${tabId} activated.`);
-      runScriptInTab(tabId);
-    });
+//     // Activate the tab without focusing the window
+//     chrome.tabs.update(tabId, {active: true}, function() {
+//       console.log(`Tab ${tabId} activated.`);
+//       runScriptInTab(tabId);
+//     });
 
-    // Do not call chrome.windows.update here since you do not want to focus the window
-  }
-});
+//     // Do not call chrome.windows.update here since you do not want to focus the window
+//   }
+// });
 
 function runScriptInTab(tabId) {
   // Using chrome.scripting for Manifest V3

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('randomMin').addEventListener('change', async () => await updateSetting('randomMin'));
   document.getElementById('randomMax').addEventListener('change', async () => await updateSetting('randomMax'));
 
-  const port = chrome.runtime.connect({name: "popupBackgroundCommunication"});
+  const port = chrome.runtime.connect({ name: "popupBackgroundCommunication" });
   popupBackgroundPort = port;
   port.onMessage.addListener(msg => handlePopupMessage(msg));
   // Listen for popup window unload event
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Disconnect the port when the popup is closed
     port.disconnect();
     popupBackgroundPort = null;
-});
+  });
 
 });
 
@@ -57,7 +57,7 @@ async function updateSetting(settingName) {
 }
 
 function formatInputsData(inputsData) {
-  const formattedInputFieldsData = inputsData?.inputFieldsData?.filter(input => input.id || input.name  || input.value).map(input => {
+  const formattedInputFieldsData = inputsData?.inputFieldsData?.filter(input => input.id || input.name || input.value).map(input => {
     return `${input.name ? `name: ${input.name}\n` : ''}` +
       `${input.id ? `id: ${input.id}\n` : ''}` +
       `${input.value ? `value: ${input.value}\n` : ''}`;
